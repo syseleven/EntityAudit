@@ -485,32 +485,36 @@ class AuditReader
      * @param int $offset
      * @param array $classNames
      * @return Revision[]
-     * @throws AuditException
-     * @throws \Doctrine\DBAL\DBALException
+     * @throws \Exception
      */
     public function findRevisionHistory($limit = 20, $offset = 0, $classNames = [])
     {
         $this->platform = $this->em->getConnection()->getDatabasePlatform();
 
-        $in = [];
-        if (!empty($classNames)) {
-            foreach ($classNames as $className) {
-                if (!$this->metadataFactory->isAudited($className)) {
-                    throw AuditException::notAudited($className);
-                }
-
-                $class = $this->em->getClassMetadata($className);
-                $tableName = $this->config->getTablePrefix().$class->table['name'].$this->config->getTableSuffix();
-                $in[] = 'id IN (SELECT rev FROM ' . $tableName . ' GROUP BY rev)';
+        $joinedTable = [];
+        $where = [];
+        if (!is_array($classNames)) {
+            throw new \Exception('Class list must be an array');
+        }
+        foreach ($classNames as $className) {
+            if (!$this->metadataFactory->isAudited($className)) {
+                throw AuditException::notAudited($className);
             }
-        }
-        $in = implode(' OR ', $in);
-        if (!empty($in)) {
-            $in = 'WHERE ' . $in;
-        }
 
+            $class = $this->em->getClassMetadata($className);
+            $tableName = $this->config->getTablePrefix().$class->table['name'].$this->config->getTableSuffix();
+            $joinedTable[] = 'LEFT JOIN ' . $tableName . ' ON id = ' . $tableName . '.rev';
+            $where[] = 'id = ' . $tableName . '.rev';
+        }
+        if (!empty($joinedTable) && !empty($where)) {
+            $joinedTable = implode(' ', $joinedTable);
+            $where = 'WHERE (' . implode(' OR ', $where) . ')';
+        } else {
+            $joinedTable = '';
+            $where = '';
+        }
         $query = $this->platform->modifyLimitQuery(
-            "SELECT * FROM " . $this->config->getRevisionTableName() . ' ' . $in ." ORDER BY id DESC", $limit, $offset
+            "SELECT t.* FROM " . $this->config->getRevisionTableName() . ' t ' . $joinedTable . " " . $where . " ORDER BY id DESC", $limit, $offset
         );
         $revisionsData = $this->em->getConnection()->fetchAll($query);
 
