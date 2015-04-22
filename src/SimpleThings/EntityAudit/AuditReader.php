@@ -483,12 +483,34 @@ class AuditReader
      *
      * @param int $limit
      * @param int $offset
+     * @param array $classNames
      * @return Revision[]
+     * @throws AuditException
+     * @throws \Doctrine\DBAL\DBALException
      */
-    public function findRevisionHistory($limit = 20, $offset = 0)
+    public function findRevisionHistory($limit = 20, $offset = 0, $classNames = [])
     {
+        $this->platform = $this->em->getConnection()->getDatabasePlatform();
+
+        $in = [];
+        if (!empty($classNames)) {
+            foreach ($classNames as $className) {
+                if (!$this->metadataFactory->isAudited($className)) {
+                    throw AuditException::notAudited($className);
+                }
+
+                $class = $this->em->getClassMetadata($className);
+                $tableName = $this->config->getTablePrefix().$class->table['name'].$this->config->getTableSuffix();
+                $in[] = 'id IN (SELECT rev FROM ' . $tableName . ' GROUP BY rev)';
+            }
+        }
+        $in = implode(' OR ', $in);
+        if (!empty($in)) {
+            $in = 'WHERE ' . $in;
+        }
+
         $query = $this->platform->modifyLimitQuery(
-            "SELECT * FROM " . $this->config->getRevisionTableName() . " ORDER BY id DESC", $limit, $offset
+            "SELECT * FROM " . $this->config->getRevisionTableName() . ' ' . $in ." ORDER BY id DESC", $limit, $offset
         );
         $revisionsData = $this->em->getConnection()->fetchAll($query);
 
