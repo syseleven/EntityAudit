@@ -498,12 +498,12 @@ class AuditReader
         }
         foreach ($classNames as $className) {
             if (!$this->metadataFactory->isAudited($className)) {
-                throw AuditException::notAudited($className);
+                throw new NotAuditedException($className);
             }
 
             $class = $this->em->getClassMetadata($className);
             $tableName = $this->config->getTablePrefix().$class->table['name'].$this->config->getTableSuffix();
-            $joinedTable[] = 'LEFT JOIN ' . $tableName . ' ON id = ' . $tableName . '.rev';
+            $joinedTable[] = 'LEFT JOIN ' . $tableName . ' ON rt.id = ' . $tableName . '.rev';
             $where[] = $tableName . '.rev IS NOT NULL';
         }
         if (!empty($joinedTable) && !empty($where)) {
@@ -514,7 +514,7 @@ class AuditReader
             $where = '';
         }
         $query = $this->platform->modifyLimitQuery(
-            "SELECT DISTINCT t.* FROM " . $this->config->getRevisionTableName() . ' t ' . $joinedTable . " " . $where . " ORDER BY id DESC", $limit, $offset
+            "SELECT DISTINCT rt.* FROM " . $this->config->getRevisionTableName() . ' rt ' . $joinedTable . " " . $where . " ORDER BY id DESC", $limit, $offset
         );
         $revisionsData = $this->em->getConnection()->fetchAll($query);
 
