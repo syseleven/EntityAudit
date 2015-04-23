@@ -180,6 +180,16 @@ class CoreTest extends BaseTest
         $this->assertEquals(1, $revisions[1]->getRev());
         $this->assertInstanceOf('DateTime', $revisions[1]->getTimestamp());
         $this->assertEquals('beberlei', $revisions[1]->getUsername());
+
+        $revisions = $reader->findRevisionHistory(20, 0, ['SimpleThings\EntityAudit\Tests\ArticleAudit']);
+        $this->assertEquals(1, count($revisions));
+
+        $revisions = $reader->findRevisionHistory(20, 0, ['SimpleThings\EntityAudit\Tests\UserAudit']);
+        $this->assertEquals(1, count($revisions));
+
+        $revisions = $reader->findRevisionHistory(20, 0, ['SimpleThings\EntityAudit\Tests\ArticleAudit','SimpleThings\EntityAudit\Tests\UserAudit']);
+        $this->assertEquals(2, count($revisions));
+
     }
 
     public function testFindEntitesChangedAtRevision()
