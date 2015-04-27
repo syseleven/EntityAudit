@@ -181,13 +181,13 @@ class CoreTest extends BaseTest
         $this->assertInstanceOf('DateTime', $revisions[1]->getTimestamp());
         $this->assertEquals('beberlei', $revisions[1]->getUsername());
 
-        $revisions = $reader->findRevisionHistory(20, 0, ['SimpleThings\EntityAudit\Tests\ArticleAudit']);
+        $revisions = $reader->findRevisionHistory(20, 0, array(get_class($article)));
         $this->assertEquals(1, count($revisions));
 
-        $revisions = $reader->findRevisionHistory(20, 0, ['SimpleThings\EntityAudit\Tests\UserAudit']);
+        $revisions = $reader->findRevisionHistory(20, 0, array(get_class($user)));
         $this->assertEquals(1, count($revisions));
 
-        $revisions = $reader->findRevisionHistory(20, 0, ['SimpleThings\EntityAudit\Tests\ArticleAudit','SimpleThings\EntityAudit\Tests\UserAudit']);
+        $revisions = $reader->findRevisionHistory(20, 0, array(get_class($article),get_class($user)));
         $this->assertEquals(2, count($revisions));
 
     }

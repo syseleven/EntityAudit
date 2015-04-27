@@ -487,12 +487,12 @@ class AuditReader
      * @return Revision[]
      * @throws \Exception
      */
-    public function findRevisionHistory($limit = 20, $offset = 0, $classNames = [])
+    public function findRevisionHistory($limit = 20, $offset = 0, $classNames = array())
     {
         $this->platform = $this->em->getConnection()->getDatabasePlatform();
 
-        $joinedTable = [];
-        $where = [];
+        $joinedTable = array();
+        $where = array();
         if (!is_array($classNames)) {
             throw new \Exception('Class list must be an array');
         }
